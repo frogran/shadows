@@ -16,13 +16,13 @@ def read_write_video(inpath, outpath=None, portrait=False):
 
     frm = cv2.VideoWriter_fourcc(*'MJPG')
     if outpath:
-        vw = cv2.VideoWriter(outpath, frm, fps, (w,h), )
+        vw = cv2.VideoWriter(outpath, frm, 25.0, (w,h), )
         return cap, vw
     return cap
 
 
 class YOLOSegmentation:
-  def __init__(self, model_path='/Users/galgo/code/pythonProject/yolov8n-seg.pt'):
+  def __init__(self, model_path='/Users/galgo/code/pythonProject/yolov8m-seg.pt'):
     self.model = YOLO(model_path)
 
   def detect(self, img):
@@ -68,16 +68,14 @@ def person_to_texture(image, texture, bg, yolo_instance: YOLOSegmentation):
     for bb, id, seg, sc in zip(bboxes, class_ids, segmentation_contours_idx, scores):
         if id == 0:
             cv2.drawContours(mask, [seg], 0, (255, 255, 255), -1)
-    print(f'mask shape{mask.shape}')
     bool_mask = cv2.cvtColor(mask, cv2.COLOR_RGB2GRAY) > 0
-    print(f'boolmask shape{bool_mask.shape}')
     # for c in range(3):
     shadow_image[bool_mask] = scaled_texture[bool_mask]
     
     return True, shadow_image
 
 
-def debug_main():
+def debug_capture_cam():
     ys = YOLOSegmentation()
     
     cap = read_write_video(0)
@@ -94,5 +92,4 @@ def debug_main():
     cv2.destroyAllWindows()
 
 
-# debug_main()
 
