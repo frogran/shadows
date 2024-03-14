@@ -85,7 +85,7 @@ def stitch_images_to_portrait(img1, img2, img3, text):
 def add_wrapped_text(image, text, pos, max_width, max_height, font_size,
 					 font_path='/Users/galgo/code/pythonProject/Sacramento-Regular.ttf'):
 	"""
-	Add wrapped text to an image using an artistic font, resizing the font as needed.
+	Add wrapped text to an image, resizing the font as needed.
 
 	:param image: The image to add text to.
 	:param text: The text to add.
@@ -99,14 +99,21 @@ def add_wrapped_text(image, text, pos, max_width, max_height, font_size,
 	img_pil = Image.fromarray(image)
 	draw = ImageDraw.Draw(img_pil)
 
-	# Load the font
 	font = ImageFont.truetype(font_path, font_size)
 
-	# Wrap the text
-	def wrap_text_fixed_font(text, font):
+	def wrap_text_fixed_font(text, font, draw, max_width):
 		lines = []
 		words = text.split()
 		while words:
+			words0_size = font.getbbox(words[0])[2] - font.getbbox(words[0])[0]
+			if words0_size > max_width:  # Check if the word is wider than the max width
+				if font.size <= 1:  # Prevents making the font size smaller than 1
+					raise ValueError(
+						"Text can't be accommodated, even at the smallest font size. Please increase the max width.")
+				# Reduce the font size
+				font = ImageFont.truetype(font.path, font.size - 1)
+				continue  # Skip the rest of the loop and re-evaluate the condition with a smaller font size
+			
 			line = ''
 			while words:
 				next_word = words[0]
@@ -118,17 +125,16 @@ def add_wrapped_text(image, text, pos, max_width, max_height, font_size,
 				else:
 					break
 			lines.append(line)
-		return lines
+		return lines, font
 	
 	# Check if the text fits within the specified height; if not, reduce font size
-	lines = wrap_text_fixed_font(text, font)
+	lines, font = wrap_text_fixed_font(text, font, draw, max_width)
 	text_height = len(lines) * (font.getbbox(lines[0])[3] - font.getbbox(lines[0])[1])
 	while text_height > max_height and font.size > 1:
 		# Reduce font size
 		font = ImageFont.truetype(font.path, font.size - 1)
-		
+		lines, font = wrap_text_fixed_font(text, font, draw, max_width)
 		# Recalculate the lines and text height
-		lines = wrap_text_fixed_font(text, font)
 		text_height = len(lines) * (font.getbbox(lines[0])[3] - font.getbbox(lines[0])[1])
 	
 	# return font, lines
@@ -154,40 +160,6 @@ def add_wrapped_text(image, text, pos, max_width, max_height, font_size,
 	return np.array(img_pil)
 
 
-# def create_rounded_rectangle_mask(image_shape, corner_radius):
-# 	"""
-# 	Create a mask for rounded rectangle.
-#
-# 	:param image_shape: The shape of the image for which to create the mask.
-# 	:param corner_radius: The radius of the rounded corners.
-# 	:return: The mask with rounded corners.
-# 	"""
-# 	# Create an all white mask
-# 	mask = np.ones((image_shape[0], image_shape[1], 4), dtype=np.uint8) * 255
-#
-# 	# Draw filled rectangles to remove the corners
-# 	cv2.rectangle(mask, (0, 0), (corner_radius, corner_radius), (0, 0, 0, 0), -1)
-# 	cv2.rectangle(mask, (image_shape[1] - corner_radius, 0), (image_shape[1], corner_radius), (0, 0, 0, 0), -1)
-# 	cv2.rectangle(mask, (0, image_shape[0] - corner_radius), (corner_radius, image_shape[0]), (0, 0, 0, 0), -1)
-# 	cv2.rectangle(mask, (image_shape[1] - corner_radius, image_shape[0] - corner_radius),
-# 				  (image_shape[1], image_shape[0]), (0, 0, 0, 0), -1)
-#
-# 	# Draw the four corners with anti-aliasing
-# 	cv2.ellipse(mask, (corner_radius, corner_radius), (corner_radius, corner_radius), 180.0, 0, 90,
-# 				(255, 255, 255, 255), -1)
-# 	cv2.ellipse(mask, (image_shape[1] - corner_radius, corner_radius), (corner_radius, corner_radius), 270.0, 0, 90,
-# 				(255, 255, 255, 255), -1)
-# 	cv2.ellipse(mask, (corner_radius, image_shape[0] - corner_radius), (corner_radius, corner_radius), 90.0, 0, 90,
-# 				(255, 255, 255, 255), -1)
-# 	cv2.ellipse(mask, (image_shape[1] - corner_radius, image_shape[0] - corner_radius), (corner_radius, corner_radius),
-# 				0.0, 0, 90, (255, 255, 255, 255), -1)
-# 	print(mask.shape)
-# 	cv2.imshow('w', mask)
-# 	cv2.startWindowThread()
-# 	cv2.waitKey(0)
-# 	cv2.destroyAllWindows()
-# 	return mask
-
 def create_rounded_corner_mask(size, corner_radius, border_thickness=30):
     """
     Create a mask for an image with rounded corners.
@@ -210,6 +182,7 @@ def create_rounded_corner_mask(size, corner_radius, border_thickness=30):
     cv2.circle(mask, (width - corner_radius - border_thickness, height - corner_radius - border_thickness), corner_radius, 255, -1)
 
     return mask
+
 
 def add_frame_with_rounded_corners(image, frame_image, corner_radius=40):
 	"""
@@ -289,33 +262,15 @@ def add_border_and_center_in_frame(image, frame_image, border_size=30, corner_ra
 	
 	return bordered_image
 
-# Usage example
-# image = cv2.imread('your-image.jpg')
-# font_path = 'path/to/your/artistic-font.ttf'
-# text = "This is a sample text that needs to be wrapped and fitted into the image."
-# position = (50, 50)  # Change as per your requirement
-# max_width = 300  # Change as per your requirement
-#
-# # Add text
-# image_with_text = add_wrapped_text(image, text, position, max_width, font_path, 30)  # Adjust font size as needed
-#
-# # Save or display the image
-# cv2.imshow('Image with Text', image_with_text)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
 
-# Test images
-# Since we do not have actual images to stitch, this code will not be executed here.
-# However, this function can be used with three OpenCV image objects to create the stitched grid.
-# Example usage:
-# from capture_cam import read_write_video
-# cap = read_write_video(0)
-# t, im = cap.read()
-# img1 = cv2.imread('/Users/galgo/code/aalto-2/Tel Aviv_0.png')
-# img2 = cv2.imread('/Users/galgo/code/aalto-2/Tel_Aviv_1.png')
-# img3 = cv2.imread('/Users/galgo/code/aalto-2/Tel_Aviv_2.png')
-# result = stitch_images_to_iphone11_resolution(im, img2, img3)
-# cv2.imwrite(find_available_filename('stitched_image.png'), result)
-# cap.release()
+def debug_utils():
+	from capture_cam import read_write_video
+	cap = read_write_video(0)
+	t, im = cap.read()
+	img1 = cv2.imread('/Users/galgo/code/aalto-2/Tel Aviv_0.png')
+	img2 = cv2.imread('/Users/galgo/code/aalto-2/Tel_Aviv_1.png')
+	img3 = cv2.imread('/Users/galgo/code/aalto-2/Tel_Aviv_2.png')
+	result = stitch_images_to_portrait(im, img2, img3, 'test text')
+	cv2.imwrite(find_available_filename('stitched_image.png'), result)
+	cap.release()
 
-# For demonstration purposes, if you provide actual images or their paths, this function can be tested.
