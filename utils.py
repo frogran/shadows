@@ -83,7 +83,7 @@ def stitch_images_to_portrait(img1, img2, img3, text):
 
 
 def add_wrapped_text(image, text, pos, max_width, max_height, font_size,
-					 font_path='/Users/galgo/code/pythonProject/Sacramento-Regular.ttf'):
+					 font_path='/Users/galgo/code/pythonProject/fonts/Sacramento-Regular.ttf'):
 	"""
 	Add wrapped text to an image, resizing the font as needed.
 

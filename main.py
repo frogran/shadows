@@ -17,22 +17,27 @@ def run_main():
 			  f"background is only ocean, " \
 			  f"ocean is in style of Ochiai Yoshiiku, " \
 			  f"style of Kumanaki kagi"
-	
-	img1_filename = generate_img(city_filename, prompt1, model)
+	print('generating city rep image')
+	img3_filename = generate_img(city_filename, prompt1, model)
 	
 	text_prompt = f"in very few words mention one special and uncommon thing about {city}. " \
 				  f"The output should be similar to 'You may not know this, but near you...'"
 	text = generate_text(text_prompt)
+	text = text.content
 	with open('text.txt', 'a') as texts:
 		texts.write(str(text) + '\n\n')
 	prompt2 = f"a very simple image of {text} in the style of {city}"
+	print('generating special thing in city image')
 	img2_filename = generate_img(city_filename, prompt2, model)
 	
 	paper_prompt = f"the texture of a very fine light paper made in {city}"
 	paper_filename = generate_img('paper', paper_prompt)
 	wood_prompt = get_wood_prompt(city)
 	wood_filename = generate_img('wood', wood_prompt)
-	show_stitch(img2_filename, img1_filename, str(text), shadow_texture_path=wood_filename, bg_path=paper_filename)
+	
+	
+	
+	show_stitch(img2_filename, img3_filename, str(text), shadow_texture_path=wood_filename, bg_path=paper_filename)
 	
 	# print(cv2.waitKey(0))
 	# cv2.destroyAllWindows()
@@ -97,6 +102,37 @@ def debug_video_without_generation():
 	return
 
 
+def debug_p2t():
+	ys = YOLOSegmentation()
+	shadow_texture_path = f'/Users/galgo/code/aalto-2/black_wood_5.png'
+	bg_path = f'/Users/galgo/code/aalto-2/paper1.jpeg'
+	bg = cv2.imread(bg_path)
+	texture = cv2.imread(shadow_texture_path)
+	cap, vw = read_write_video(0, find_available_filename(f'/Users/galgo/code/aalto-2/test_p2t.avi'), portrait=True)
+	t, cam = cap.read()
+	cv2.startWindowThread()
+	i = 0
+	while t:
+		cam = scale_and_crop_center(cam, 512, 512)
+		s, shadow = person_to_texture(cam, texture, bg, ys)
+		
+		print(shadow.shape)
+		# cv2.imshow('screen1', stitched_image)
+		# print(stitched_image)
+		vw.write(shadow)
+		
+		t, cam = cap.read()
+		i = i + 1
+		print(i)
+		if i > 50:
+			break
+		if cv2.waitKey(10) & 0xFF == ord('q'):
+			break
+	vw.release()
+	cap.release()
+	cv2.destroyAllWindows()
+
+
 def show_stitch(bottom_right_img_path, top_right_img_path, text,
 				shadow_texture_path=f'/Users/galgo/code/aalto-2/black_wood_5.png',
 				bg_path=f'/Users/galgo/code/aalto-2/paper1.jpeg',
@@ -125,7 +161,7 @@ def show_stitch(bottom_right_img_path, top_right_img_path, text,
 		t, cam = cap.read()
 		i = i + 1
 		print(i)
-		if i > 20:
+		if i > 120:
 			break
 		if cv2.waitKey(10) & 0xFF == ord('q'):
 			break
@@ -135,4 +171,4 @@ def show_stitch(bottom_right_img_path, top_right_img_path, text,
 
 
 if __name__ == '__main__':
-	debug_single_stitching()
+	debug_p2t()
