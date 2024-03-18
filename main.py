@@ -1,150 +1,88 @@
 import cv2
-
+import argparse
 from location_utils import get_city
 from location_image import generate_img, get_wood_prompt
 from get_generated_text import generate_text
 from capture_cam import read_write_video, YOLOSegmentation, person_to_texture
 from utils import stitch_images_to_portrait, find_available_filename, scale_and_crop_center
 
-# TODO single_image with show option
-# TODO video with show option
 
-# run_main()
-# generates image; text; image2 according to text
-# records 120 frames for video
-
-# debug_single_stitching
-# generates text
-# stitches together
-
-# debug_video_without_generation
-# generates nothing; records 120 frames for video
-
-def run_main():
-	# TODO add outlines
-	city = get_city()
-	city_filename = city.replace(" ", "_")
-	model = 'dall-e-3'
-	prompt1 = f'one thing representing {city}, ' \
-			  f'thing in center and small, ' \
-			  f'background is only ocean, ' \
-			  f'ocean is in style of Ochiai Yoshiiku, ' \
-			  f'style of Kumanaki kagi'
-	print('generating city rep image')
-	img3_filename = generate_img(city_filename, prompt1, model)
-	
-	text_prompt = f"in very few words mention one special and uncommon thing about {city}. " \
-				  f"The output should be similar to 'You may not know this, but near you...'"
-	text = generate_text(text_prompt)
-	text = text.content
-	with open('text.txt', 'a') as texts:
-		texts.write(str(text) + '\n\n')
-	prompt2 = f"a very simple image of {text} in the style of {city}"
-	print('generating special thing in city image')
-	img2_filename = generate_img(city_filename, prompt2, model)
-	
-	paper_prompt = f"the texture of a very fine light paper made in {city}"
-	paper_filename = generate_img('paper', paper_prompt)
-	wood_prompt = get_wood_prompt(city)
-	wood_filename = generate_img('wood', wood_prompt)
-	
-	show_stitch(img2_filename, img3_filename, text, shadow_texture_path=wood_filename, bg_path=paper_filename)
-	
-	return
+def image(img2_path, img3_path, text, shadow_texture_path, bg_path, show=False):
+    texture = cv2.imread(shadow_texture_path)
+    bg = cv2.imread(bg_path)
+    img2 = cv2.imread(img2_path)
+    img3 = cv2.imread(img3_path)
+    stitched_image = stitch_images_to_portrait(img2, img3, text, texture, bg)
+    if show:
+        cv2.imshow('Stitched Image', stitched_image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    filename = find_available_filename('stitched_img.png')
+    cv2.imwrite(filename, stitched_image)
 
 
-def debug_single_stitching():
-	img2 = cv2.imread('/Users/galgo/code/aalto-2/Tel_Aviv_9.png')
-	img3 = cv2.imread('/Users/galgo/code/aalto-2/Tel_Aviv_6.png')
-	shadow = cv2.imread('/Users/galgo/code/pythonProject/shadow.png')
-	print(shadow.shape)
-	text_prompt = f"You are a local tour guide in Barcelona." \
-				  f"In very few words mention one thing that would surprise a local about Barcelona." \
-				  f"Think of something special!" \
-				  f"The output should be similar to 'You may not know this, but near you...'"
-	text = generate_text(text_prompt)
-	stitched_image = stitch_images_to_portrait(shadow, img2, img3, text.content)
-	filename = find_available_filename(f'/Users/galgo/code/aalto-2/stitched_img.png')
-	print(filename)
-	cv2.imwrite(filename, stitched_image)
-	return
+def video(img2_path, img3_path, text, shadow_texture_path, bg_path, show=False):
+    ys = YOLOSegmentation()
+    texture = cv2.imread(shadow_texture_path)
+    bg = cv2.imread(bg_path)
+    cap, vw = read_write_video(0, find_available_filename('video.avi'), portrait=True)
+    i = 0
+    while True:
+        t, cam = cap.read()
+        if not t or i >= 120: break
+        cam = scale_and_crop_center(cam, 512, 512)
+        s, shadow = person_to_texture(cam, texture, bg, ys)
+        stitched_image = stitch_images_to_portrait(shadow, cv2.imread(img2_path), cv2.imread(img3_path), text)
+        if show:
+            cv2.imshow('Video Frame', stitched_image)
+            if cv2.waitKey(10) & 0xFF == ord('q'):
+                break
+        vw.write(stitched_image)
+        i += 1
+    vw.release()
+    cap.release()
+    cv2.destroyAllWindows()
 
 
-def debug_video_without_generation():
-	img2_filename = '/Users/galgo/code/aalto-2/Tel_Aviv_9.png'
-	img3_filename = '/Users/galgo/code/aalto-2/Tel_Aviv_6.png'
-	text = 'this is an example of how text will be displayed'
-	show_stitch(img2_filename, img3_filename, text)
-	return
+def main():
+    parser = argparse.ArgumentParser(description="Process images and videos.")
+    parser.add_argument('--mode', type=str, help='Mode: image or video', required=True)
+    parser.add_argument('--shadow', type=str, help='Path to shadow image', default=None)
+    parser.add_argument('--top_right', type=str, help='Path to top right image', default=None)
+    parser.add_argument('--bottom_right', type=str, help='Path to bottom right image', default=None)
+    parser.add_argument('--text', type=str, help='Text to overlay', default=None)
+    parser.add_argument('--wood', type=str, help='Path to wood texture image', default=None)
+    parser.add_argument('--paper', type=str, help='Path to paper texture image', default=None)
+    parser.add_argument('--openai_apikey', type=str, help='Generation requires OpenAI API-key', default=None)
+    args = parser.parse_args()
 
+    if not args.openai_apikey:
+        if not args.text or not args.bottom_right or not args.top_right or not args.top_right or not args.wood or not args.paper:
+            print("Please provide all inputs or OpenAI API-key")
+            return
+        
+    city = get_city()
+    city_filename = city.replace(" ", "_")
+    if not args.text:
+        args.text = generate_text(f"in very few words mention one special and unknown thing about {city}",
+                                  args.openai_apikey).content
+        with open('text.txt', 'a') as texts:
+            texts.write(str(args.text) + '\n\n')
+    if not args.bottom_right:
+        image_prompt = f"a very simple image of {args.text} in the style of {city}"
+        args.bottom_right = generate_img(city_filename, image_prompt, args.openai_apikey, 'dall-e-3')
+    if not args.top_right:
+        args.top_right = generate_img(city_filename, "prompt_for_top_right", args.openai_apikey, 'dall-e-3')
+    if not args.wood:
+        args.wood = generate_img('wood', get_wood_prompt(city), args.openai_apikey)
+    if not args.paper:
+        args.paper = generate_img('paper', f"prompt for paper texture based on {city}", args.openai_apikey)
 
-def debug_p2t():
-	ys = YOLOSegmentation()
-	shadow_texture_path = f'/Users/galgo/code/aalto-2/black_wood_5.png'
-	bg_path = f'/Users/galgo/code/aalto-2/paper1.jpeg'
-	bg = cv2.imread(bg_path)
-	texture = cv2.imread(shadow_texture_path)
-	cap, vw = read_write_video(0, find_available_filename(f'/Users/galgo/code/aalto-2/test_p2t.avi'), portrait=True)
-	t, cam = cap.read()
-	cv2.startWindowThread()
-	i = 0
-	while t:
-		cam = scale_and_crop_center(cam, 512, 512)
-		s, shadow = person_to_texture(cam, texture, bg, ys)
-		
-		print(shadow.shape)
-		# cv2.imshow('screen1', stitched_image)
-		# print(stitched_image)
-		vw.write(shadow)
-		
-		t, cam = cap.read()
-		i = i + 1
-		print(i)
-		if i > 50:
-			break
-		if cv2.waitKey(10) & 0xFF == ord('q'):
-			break
-	vw.release()
-	cap.release()
-	cv2.destroyAllWindows()
-
-
-def show_stitch(bottom_right_img_path, top_right_img_path, text,
-				shadow_texture_path=f'/Users/galgo/code/aalto-2/black_wood_5.png',
-				bg_path=f'/Users/galgo/code/aalto-2/paper1.jpeg',
-				ys=None):
-	texture = cv2.imread(shadow_texture_path)
-	bg = cv2.imread(bg_path)
-	if not ys:
-		ys = YOLOSegmentation()
-	
-	bottom_right_img = cv2.imread(bottom_right_img_path)
-	top_right_img = cv2.imread(top_right_img_path)
-	cap, vw = read_write_video(0, find_available_filename(f'/Users/galgo/code/aalto-2/test_shadow.avi'), portrait=True)
-	t, cam = cap.read()
-	cv2.startWindowThread()
-	i = 0
-	while t:
-		cam = scale_and_crop_center(cam, 512, 512)
-		s, shadow = person_to_texture(cam, texture, bg, ys)
-		
-		print(shadow.shape)
-		stitched_image = stitch_images_to_portrait(shadow, bottom_right_img, top_right_img, text)
-		# cv2.imshow('screen1', stitched_image)
-		# print(stitched_image)
-		vw.write(stitched_image)
-		
-		t, cam = cap.read()
-		i = i + 1
-		print(i)
-		if i > 120:
-			break
-		if cv2.waitKey(10) & 0xFF == ord('q'):
-			break
-	vw.release()
-	cap.release()
-	cv2.destroyAllWindows()
+    if args.mode == 'image':
+        image(args.top_left, args.top_right, args.text, args.wood, args.paper, show=True)
+    elif args.mode == 'video':
+        video(args.top_left, args.top_right, args.text, args.wood, args.paper, show=True)
 
 
 if __name__ == '__main__':
-	debug_p2t()
+    main()

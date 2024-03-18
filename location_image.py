@@ -1,12 +1,12 @@
 import requests
 from openai import OpenAI
 from utils import find_available_filename
-client = OpenAI()
 
 # TODO def create_img_frame()
 
 
-def generate_img(name, prompt, model='dall-e-3', size="1024x1024"):
+def generate_img(name, prompt, api_key=None, model='dall-e-3', size="1024x1024"):
+	client = OpenAI(api_key)
 	response = client.images.generate(
 		model=model,
 		prompt=prompt,

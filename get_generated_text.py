@@ -1,8 +1,8 @@
 from openai import OpenAI
 
 
-def generate_text(input_task, content=None, model="gpt-3.5-turbo"):
-	client = OpenAI()
+def generate_text(input_task, api_key=None, content=None, model="gpt-3.5-turbo"):
+	client = OpenAI(api_key)
 	
 	if not content:
 		content = "You are an artistic assistant, skilled in explaining creative coding concepts flair."
