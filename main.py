@@ -6,17 +6,30 @@ from get_generated_text import generate_text
 from capture_cam import read_write_video, YOLOSegmentation, person_to_texture
 from utils import stitch_images_to_portrait, find_available_filename, scale_and_crop_center
 
+# TODO single_image with show option
+# TODO video with show option
+
+# run_main()
+# generates image; text; image2 according to text
+# records 120 frames for video
+
+# debug_single_stitching
+# generates text
+# stitches together
+
+# debug_video_without_generation
+# generates nothing; records 120 frames for video
 
 def run_main():
 	# TODO add outlines
 	city = get_city()
 	city_filename = city.replace(" ", "_")
 	model = 'dall-e-3'
-	prompt1 = f"one thing representing {city}, " \
-			  f"thing in center and small, " \
-			  f"background is only ocean, " \
-			  f"ocean is in style of Ochiai Yoshiiku, " \
-			  f"style of Kumanaki kagi"
+	prompt1 = f'one thing representing {city}, ' \
+			  f'thing in center and small, ' \
+			  f'background is only ocean, ' \
+			  f'ocean is in style of Ochiai Yoshiiku, ' \
+			  f'style of Kumanaki kagi'
 	print('generating city rep image')
 	img3_filename = generate_img(city_filename, prompt1, model)
 	
@@ -35,70 +48,33 @@ def run_main():
 	wood_prompt = get_wood_prompt(city)
 	wood_filename = generate_img('wood', wood_prompt)
 	
-	
-	
-	show_stitch(img2_filename, img3_filename, str(text), shadow_texture_path=wood_filename, bg_path=paper_filename)
-	
-	# print(cv2.waitKey(0))
-	# cv2.destroyAllWindows()
-	# for i in range(2):
-	# 	cv2.waitKey(1)
+	show_stitch(img2_filename, img3_filename, text, shadow_texture_path=wood_filename, bg_path=paper_filename)
 	
 	return
 
 
 def debug_single_stitching():
-	img2_filename = '/Users/galgo/code/aalto-2/Tel_Aviv_9.png'
-	img3_filename = '/Users/galgo/code/aalto-2/Tel_Aviv_6.png'
-	# texture = cv2.imread(f'/Users/galgo/code/aalto-2/black_wood_5.png')
-	# bg = cv2.imread(f'/Users/galgo/code/aalto-2/paper1.jpeg')
-	# ys = YOLOSegmentation()
+	img2 = cv2.imread('/Users/galgo/code/aalto-2/Tel_Aviv_9.png')
+	img3 = cv2.imread('/Users/galgo/code/aalto-2/Tel_Aviv_6.png')
 	shadow = cv2.imread('/Users/galgo/code/pythonProject/shadow.png')
-	img2 = cv2.imread(img2_filename)
-	img3 = cv2.imread(img3_filename)
-	# cap = read_write_video(0)
-	# t, cam = cap.read()
-	# s, shadow = person_to_texture(cam, texture, bg, ys)
-	# i = 0
-	# while not s:
-	# 	t, cam = cap.read()
-	# 	s, shadow = person_to_texture(cam, texture, bg, ys)
-	# 	i = i + 1
-	# 	if i > 49:
-	# 		print('failed to detect')
-	# 		return
-	#
-	# cv2.startWindowThread()
 	print(shadow.shape)
-	# cv2.imwrite('shadow.png', shadow)
 	text_prompt = f"You are a local tour guide in Barcelona." \
 				  f"In very few words mention one thing that would surprise a local about Barcelona." \
 				  f"Think of something special!" \
 				  f"The output should be similar to 'You may not know this, but near you...'"
 	text = generate_text(text_prompt)
 	stitched_image = stitch_images_to_portrait(shadow, img2, img3, text.content)
-	# cv2.imshow('screen1', stitched_image)
 	filename = find_available_filename(f'/Users/galgo/code/aalto-2/stitched_img.png')
 	print(filename)
 	cv2.imwrite(filename, stitched_image)
-	# s_filename = find_available_filename(f'/Users/galgo/code/aalto-2/shadow.png')
-	# cv2.imwrite(s_filename, stitched_image)
-	# print(f'stitched image shape: {stitched_image.shape}')
 	return
-	
-	# cv2.waitKey(0)
-	cap.release()
-	cv2.destroyAllWindows()
 
 
 def debug_video_without_generation():
-	paper_img_path = f'/Users/galgo/code/aalto-2/paper1.jpeg'
-	wood_image_path = f'/Users/galgo/code/aalto-2/black_wood_5.png'
-	
 	img2_filename = '/Users/galgo/code/aalto-2/Tel_Aviv_9.png'
 	img3_filename = '/Users/galgo/code/aalto-2/Tel_Aviv_6.png'
-	
-	show_stitch(img2_filename, img3_filename)
+	text = 'this is an example of how text will be displayed'
+	show_stitch(img2_filename, img3_filename, text)
 	return
 
 
@@ -151,7 +127,7 @@ def show_stitch(bottom_right_img_path, top_right_img_path, text,
 	while t:
 		cam = scale_and_crop_center(cam, 512, 512)
 		s, shadow = person_to_texture(cam, texture, bg, ys)
-
+		
 		print(shadow.shape)
 		stitched_image = stitch_images_to_portrait(shadow, bottom_right_img, top_right_img, text)
 		# cv2.imshow('screen1', stitched_image)
