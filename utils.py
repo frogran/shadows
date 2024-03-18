@@ -75,9 +75,10 @@ def stitch_images_to_portrait(img1, img2, img3, text):
 	
 	# Stitch the top and bottom halves together
 	stitched_image = np.concatenate((top_half, bottom_half), axis=0)
-	# cv2.imshow('screen', stitched_image)
-	# cv2.waitKey(0)
+
 	result = stitched_image.astype(np.uint8)
+	if result.shape[2] == 4:
+		result = cv2.cvtColor(result, cv2.COLOR_BGRA2BGR)
 	result = add_wrapped_text(result, text, (20, 20), top_left_width - 30, top_height - 40, 100)
 	return result
 
