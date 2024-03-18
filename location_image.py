@@ -6,7 +6,7 @@ from utils import find_available_filename
 
 
 def generate_img(name, prompt, api_key=None, model='dall-e-3', size="1024x1024"):
-	client = OpenAI(api_key)
+	client = OpenAI(api_key=api_key)
 	response = client.images.generate(
 		model=model,
 		prompt=prompt,

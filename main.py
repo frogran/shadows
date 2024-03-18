@@ -79,9 +79,9 @@ def main():
         args.paper = generate_img('paper', f"prompt for paper texture based on {city}", args.openai_apikey)
 
     if args.mode == 'image':
-        image(args.top_left, args.top_right, args.text, args.wood, args.paper, show=True)
+        image(args.bottom_right, args.top_right, args.text, args.wood, args.paper, show=True)
     elif args.mode == 'video':
-        video(args.top_left, args.top_right, args.text, args.wood, args.paper, show=True)
+        video(args.bottom_right, args.top_right, args.text, args.wood, args.paper, show=True)
 
 
 if __name__ == '__main__':

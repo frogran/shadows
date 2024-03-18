@@ -2,7 +2,7 @@ from openai import OpenAI
 
 
 def generate_text(input_task, api_key=None, content=None, model="gpt-3.5-turbo"):
-	client = OpenAI(api_key)
+	client = OpenAI(api_key=api_key)
 	
 	if not content:
 		content = "You are an artistic assistant, skilled in explaining creative coding concepts flair."
@@ -20,7 +20,6 @@ def generate_text(input_task, api_key=None, content=None, model="gpt-3.5-turbo")
 	print(message)
 	return message
 	
-
 
 def debug_main():
 	generate_text("Compose a poem that breaks down the concept of shadows in art.")
