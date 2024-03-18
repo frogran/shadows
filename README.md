@@ -14,6 +14,8 @@ Before running the script, ensure you have Python installed on your system. Then
 
 ```bash
 pip install requests openai numpy opencv-python Pillow argparse ultralytics
+```
+
 Note:
 
 cv2 (OpenCV) is installed via opencv-python.
@@ -22,14 +24,14 @@ If you're using OpenAI's API, you need an API key from OpenAI
 
 ```markdown
 # Image and Video Processing Tool
-
+```
 This script processes images and videos, allowing for dynamic generation based on textual descriptions or specific image inputs.
 
 ## Usage
 
 ```bash
 python script.py --mode [image|video] [--shadow PATH] [--top_right PATH] [--bottom_right PATH] [--text TEXT] [--wood PATH] [--paper PATH] [--openai_apikey KEY]
-```
+
 
 - `--mode`: Choose 'image' or 'video' to specify the processing mode.
 - `--shadow`: Path to the shadow image. If not provided, a default is generated.
