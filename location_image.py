@@ -40,4 +40,4 @@ def get_wood_prompt(city=None):
 		   'suggesting a natural, aged look. The image should be in black and white. ' \
 		   'The surface should appear slightly weathered, with subtle imperfections such as small knots, ' \
 		   'minimal scratches, and a faint matte sheen reflecting light. The perspective should be a close-up, ' \
-		   'showing the detailed texture of the wood. Very dark image, low contrast. Low Brightness.'
+		   'showing the detailed texture of the wood. Very dark image, low contrast. Low Brightness. (Dark: 1.3), Low light.'
