@@ -1,4 +1,4 @@
-## Mockup for Unclear Shadows
+# Prototype for Unclear Shadows
 
 Homage to Clear Shadows (Kumanaki kage, 1867) by Ochiai Yoshiiku. 
 Visual social network filter to reflect collected data points -
@@ -22,9 +22,9 @@ cv2 (OpenCV) is installed via opencv-python.
 YOLO from ultralytics requires additional setup; refer to the Ultralytics YOLO documentation for detailed instructions.
 If you're using OpenAI's API, you need an API key from OpenAI
 
-```markdown
-# Image and Video Processing Tool
-```
+
+## Image and Video Processing Tool
+
 This script processes images and videos, allowing for dynamic generation based on textual descriptions or specific image inputs.
 
 ## Usage
@@ -46,3 +46,7 @@ Ensure to replace `script.py` with the name of your Python script.
 ```
 
 Adjust the script name and paths as necessary for your specific setup.
+
+
+### Examples for generated images can be found at
+https://drive.google.com/drive/folders/1HDo5lHrjiPgP5LT7aE6pNxJyPh-Gjfju?usp=sharing
