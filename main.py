@@ -1,7 +1,7 @@
 import cv2
 import argparse
 from location_utils import get_city
-from location_image import generate_img, get_wood_prompt
+from location_image import generate_img, get_wood_prompt, get_paper_prompt
 from get_generated_text import generate_text
 from capture_cam import read_write_video, YOLOSegmentation, person_to_texture
 from utils import stitch_images_to_portrait, find_available_filename, scale_and_crop_center
@@ -15,7 +15,7 @@ def image(img2_path, img3_path, text, shadow_texture_path, bg_path, show=False):
     ys = YOLOSegmentation()
     cap = read_write_video(0)
     t, cam = cap.read()
-    cam = scale_and_crop_center(cam, 512, 512)
+    cam = scale_and_crop_center(cam, 640, 640)
     s, shadow = person_to_texture(cam, texture, bg, ys)
     cap.release()
     stitched_image = stitch_images_to_portrait(shadow, img2, img3, text)
@@ -36,7 +36,7 @@ def video(img2_path, img3_path, text, shadow_texture_path, bg_path, show=False):
     while True:
         t, cam = cap.read()
         if not t or i >= 120: break
-        cam = scale_and_crop_center(cam, 512, 512)
+        cam = scale_and_crop_center(cam, 640, 640)
         s, shadow = person_to_texture(cam, texture, bg, ys)
         stitched_image = stitch_images_to_portrait(shadow, cv2.imread(img2_path), cv2.imread(img3_path), text)
         if show:
@@ -61,7 +61,7 @@ def main():
     parser.add_argument('--wood', type=str, help='Path to wood texture image', default=None)
     parser.add_argument('--paper', type=str, help='Path to paper texture image', default=None)
     parser.add_argument('--openai_apikey', type=str, help='Generation requires OpenAI API-key', default=None)
-    parser.add_argument('--show', type=str, help='Show created image (True of False)', default=False)
+    parser.add_argument('--show', type=bool, help='Show created image (True of False)', default=False)
     args = parser.parse_args()
 
     if not args.openai_apikey:
@@ -85,7 +85,7 @@ def main():
     if not args.wood:
         args.wood = generate_img('wood', get_wood_prompt(args.city), args.openai_apikey)
     if not args.paper:
-        args.paper = generate_img('paper', f"prompt for paper texture based on {args.city}", args.openai_apikey)
+        args.paper = generate_img('paper', get_paper_prompt(args.city), args.openai_apikey)
 
     if args.mode == 'image':
         image(args.bottom_right, args.top_right, args.text, args.wood, args.paper, show=args.show)

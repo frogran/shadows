@@ -32,6 +32,15 @@ def debug_main():
 	generate_img(prompt, model, size)
 
 
+def get_paper_prompt(city=None):
+	if city:
+		city = f' from {city}'
+	return (f"Create an image of a high-resolution vintage paper texture made in {city}. "
+			f"The paper should appear aged and weathered, with a natural pale yellow-brown color. It should showcase "
+			f"characteristics like uneven surface, subtle crinkles, patches of discoloration, and faint, scattered "
+			f"stains, resembling an antique document or an old manuscript. The texture should convey a sense of "
+			f"historical depth and time-worn beauty, ideal for a backdrop of historical art or writing.")
+
 def get_wood_prompt(city=None):
 	if city:
 		city = f' from {city}'
